@@ -1,0 +1,1756 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classroom Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+
+    <style>
+        :root {
+            --fiba-bg: #0c0225e0;
+            --fiba-card-bg: #ffffff;
+            --fiba-dark: #111111;
+            --fiba-gray: #4a5568;
+            --fiba-light-gray: #e2e8f0;
+            --fiba-accent: #050210;
+            --fiba-blue: #040505;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body.gc-body {
+            background-color: var(--fiba-bg);
+            color: var(--fiba-dark);
+            min-height: 100vh;
+        }
+
+        .gc-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: var(--fiba-bg);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            height: 75px;
+            padding: 0 30px;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .gc-header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .gc-header-center-nav {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+        }
+
+        .nav-item-top {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #cbd5e1;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 8px 14px;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .nav-item-top i {
+            font-size: 18px;
+            margin-bottom: 4px;
+        }
+
+        .nav-item-top:hover, .nav-item-top.active {
+            color: #ffffff;
+            background-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .gc-main-layout {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        /* Hero Slideshow Styles */
+        .hero-slideshow-container {
+            position: relative;
+            width: 100%;
+            height: 380px;
+            border-radius: 16px;
+            overflow: hidden;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+            background: var(--fiba-dark);
+        }
+
+        .hero-slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 40px;
+            color: white;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+            opacity: 0;
+            transition: opacity 1s ease-in-out;
+        }
+
+        .hero-slide.active {
+            opacity: 1;
+        }
+
+        .hero-slide::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0; width: 100%; height: 60%;
+            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+            z-index: 1;
+        }
+
+        .hero-slide-content {
+            position: relative;
+            z-index: 2;
+        }
+
+        .hero-slide-content h2 {
+            font-size: 32px;
+            font-weight: 800;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .hero-slide-content p {
+            font-size: 16px;
+            opacity: 0.95;
+            color: #ffffff;
+        }
+
+        .hero-dots {
+            position: absolute;
+            bottom: 15px;
+            right: 25px;
+            display: flex;
+            gap: 8px;
+            z-index: 10;
+        }
+
+        .hero-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.4);
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .hero-dot.active {
+            background: #ffffff;
+            width: 25px;
+            border-radius: 5px;
+        }
+
+        .content-card-box {
+            background-color: var(--fiba-card-bg);
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            min-height: 80vh;
+        }
+
+        .dashboard-header-flex {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            border-bottom: 2px solid var(--fiba-light-gray);
+            padding-bottom: 15px;
+        }
+
+        .section-title {
+            font-size: 22px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #1a202c;
+        }
+
+        .classes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 25px;
+        }
+
+        .class-card {
+            background: var(--fiba-card-bg);
+            border: 1px solid var(--fiba-light-gray);
+            border-radius: 14px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
+        }
+
+        .class-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 12px 35px rgba(0,0,0,0.12);
+        }
+
+        .class-card-header {
+            height: 220px;
+            background-size: cover;
+            background-position: center;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            color: #fff;
+            text-shadow: 0 2px 6px rgba(0,0,0,0.7);
+        }
+
+        .class-card-header h4 {
+            font-size: 22px;
+            font-weight: 800;
+            line-height: 1.2;
+        }
+
+        .class-card-header p {
+            font-size: 14px;
+            opacity: 0.95;
+            font-weight: 500;
+        }
+
+        .class-card-header span {
+            font-size: 11px;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            padding: 4px 10px;
+            border-radius: 6px;
+            align-self: flex-start;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .class-card-body {
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #faf9f6;
+            border-top: 1px solid var(--fiba-light-gray);
+        }
+
+        .btn-primary {
+            background-color: #1e1b4b;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+        }
+
+        .btn-primary:hover {
+            background-color: #312e81;
+        }
+
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+
+        .btn-secondary {
+            background-color: var(--fiba-light-gray);
+            color: #1a202c;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-secondary:hover {
+            background-color: #cbd5e1;
+        }
+
+        .btn-danger {
+            background-color: #991b1b;
+            color: #fff;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background 0.2s;
+        }
+
+        .btn-danger:hover {
+            background-color: #b91c1c;
+        }
+
+        .gc-action-btn, .gc-logout-btn {
+            background: rgba(255, 255, 255, 0.15);
+            border: none;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            color: #ffffff;
+            transition: background 0.2s;
+        }
+
+        .gc-action-btn:hover, .gc-logout-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        /* Subject Banner Slider */
+        .subject-header-banner-container {
+            position: relative;
+            border-radius: 14px;
+            overflow: hidden;
+            margin-bottom: 25px;
+            box-shadow: inset 0 0 80px rgba(0,0,0,0.4);
+            height: 240px;
+        }
+
+        .subject-banner-slide {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 30px;
+            color: white;
+            text-shadow: 0 2px 5px rgba(0,0,0,0.8);
+            opacity: 0;
+            transition: opacity 1s ease-in-out;
+        }
+
+        .subject-banner-slide.active {
+            opacity: 1;
+        }
+
+        .subject-banner-slide::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0; width: 100%; height: 70%;
+            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+            z-index: 1;
+        }
+
+        .subject-banner-content {
+            position: relative;
+            z-index: 2;
+        }
+
+        .subject-tabs {
+            display: flex;
+            gap: 10px;
+            border-bottom: 2px solid var(--fiba-light-gray);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            padding: 8px 16px;
+            font-weight: 600;
+            cursor: pointer;
+            color: #4a5568;
+            border-radius: 6px;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        .tab-btn:hover {
+            background: rgba(30, 27, 75, 0.1);
+            color: #1e1b4b;
+        }
+
+        .tab-btn.active {
+            background: #1e1b4b;
+            color: white;
+        }
+
+        .card-box {
+            background: #faf9f6;
+            border: 1px solid var(--fiba-light-gray);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: box-shadow 0.2s;
+        }
+
+        .card-box:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        .chat-messages-container {
+            height: 300px;
+            overflow-y: auto;
+            background: white;
+            border: 1px solid var(--fiba-light-gray);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .chat-input-box {
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input-box input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid var(--fiba-light-gray);
+            border-radius: 8px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .chat-input-box input:focus {
+            border-color: #1e1b4b;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            width: 450px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.25);
+            animation: modalPop 0.3s ease;
+        }
+
+        @keyframes modalPop {
+            0% { transform: scale(0.9); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .modal-card input {
+            width: 100%;
+            padding: 10px;
+            margin-top: 8px;
+            margin-bottom: 15px;
+            border: 1px solid var(--fiba-light-gray);
+            border-radius: 6px;
+            outline: none;
+        }
+
+        .modal-card input:focus {
+            border-color: #1e1b4b;
+        }
+
+        .sub-text {
+            font-size: 13px;
+            color: #4a5568;
+        }
+
+        .people-list-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--fiba-light-gray);
+            font-size: 14px;
+            font-weight: 500;
+            color: #2d3748;
+        }
+
+        .add-work-box {
+            background: #fff;
+            border: 1px dashed #cbd5e1;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body class="gc-body">
+
+    <!-- Top Navigation Bar -->
+    <header class="gc-header">
+        <div class="gc-header-left">
+            <div class="gc-logo" onclick="switchTopNav('home')" style="cursor: pointer; display: flex; align-items: center;">
+                <div style="width: 44px; height: 44px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center; background: rgba(255, 255, 255, 0.1); border: 1.5px solid rgba(255,255,255,0.2);">
+                    <img src="Gemini_Generated_Image_pwq2elpwq2elpwq2.jpg" alt="Logo" style="width: 130%; height: 130%; object-fit: cover; object-position: center; filter: brightness(1.3) contrast(1.2);">
+                </div>
+            </div>
+            <div class="gc-brand-text" style="display: flex; flex-direction: column; justify-content: center; line-height: 1.2; margin-left: 12px;">
+                <span style="color: #ffffff; font-weight: bold; font-size: 15px; letter-spacing: 0.5px;">CTRL</span>
+                <span style="color: #ffffff; font-size: 13px; opacity: 0.6;">Navigate with Purpose</span>
+            </div>
+        </div>
+
+        <div class="gc-header-center-nav">
+            <button class="nav-item-top active" id="navHomeBtn" onclick="switchTopNav('home')">
+                <i class="fa-solid fa-house"></i>
+                <span>Home</span>
+            </button>
+            <button class="nav-item-top" id="navEnrolledBtn" onclick="switchTopNav('enrolled')">
+                <i class="fa-solid fa-book-bookmark" id="navEnrolledIcon"></i>
+                <span id="navEnrolledText">Enrolled Subject</span>
+            </button>
+            <button class="nav-item-top" id="navTodoBtn" onclick="switchTopNav('todo')">
+                <i class="fa-solid fa-list-check"></i>
+                <span>To-Do</span>
+            </button>
+        </div>
+
+        <div class="gc-header-right" style="display: flex; align-items: center; gap: 12px;">
+            <button id="actionBtn" class="gc-action-btn" onclick="openClassModal()"></button>
+            <span class="user-email" id="currentUserDisplay" style="font-size: 14px; font-weight: 700; color: #ffffff;">Loading...</span>
+            <button onclick="handleLogout()" class="gc-logout-btn"><i class="fa-solid fa-right-from-bracket"></i></button>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <div class="gc-main-layout">
+        <div class="content-card-box">
+
+            <!-- VIEW 1: Main Dashboard -->
+            <div id="mainDashboardView">
+                <div class="hero-slideshow-container" id="heroSlideshow">
+                    <div class="hero-dots" id="heroDots"></div>
+                </div>
+
+                <div class="dashboard-header-flex">
+                    <h3 class="section-title" id="classesSectionTitle">Your Classes</h3>
+                </div>
+                <div class="classes-grid" id="classesGrid"></div>
+            </div>
+
+            <!-- VIEW 2: Enrolled Subject View -->
+            <div id="enrolledSubjectView" style="display: none;">
+                <div class="dashboard-header-flex">
+                    <h3 class="section-title" id="secondViewTitle">Enrolled Subjects</h3>
+                </div>
+                <p class="sub-text" id="secondViewDesc" style="margin-bottom: 20px;"></p>
+                <div class="classes-grid" id="enrolledSubjectsGrid"></div>
+            </div>
+
+            <!-- VIEW 3: Global To-Do View -->
+            <div id="globalTodoView" style="display: none;">
+                <div class="dashboard-header-flex">
+                    <h3 class="section-title">All Assigned Tasks & Activities</h3>
+                </div>
+                <div id="globalTodoList"></div>
+            </div>
+
+            <!-- VIEW 4: Subject Detail View -->
+            <div id="subjectDetailView" style="display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <button class="btn-secondary" onclick="switchTopNav('home')"><i class="fa-solid fa-arrow-left"></i> Back to Home</button>
+                    <div id="subjectActionControl"></div>
+                </div>
+
+                <!-- Subject Banner Slideshow -->
+                <div class="subject-header-banner-container" id="subjectBannerContainer">
+                    <div class="hero-dots" id="subjectBannerDots" style="z-index: 10;"></div>
+                </div>
+
+                <!-- Subject Tabs -->
+                <div class="subject-tabs">
+                    <button class="tab-btn active" onclick="switchSubjectTab('stream')"><i class="fa-solid fa-newspaper"></i> Stream</button>
+                    <button class="tab-btn" onclick="switchSubjectTab('attendance')"><i class="fa-solid fa-user-check"></i> Attendance</button>
+                    <button class="tab-btn" onclick="switchSubjectTab('todo')"><i class="fa-solid fa-list-check"></i> Class Tasks</button>
+                    <button class="tab-btn" onclick="switchSubjectTab('people')"><i class="fa-solid fa-users"></i> Classmates</button>
+                    <button class="tab-btn" onclick="switchSubjectTab('privateChat')"><i class="fa-solid fa-comments"></i> Private Chat</button>
+                </div>
+
+                <!-- TAB 1: Stream -->
+                <div id="tabStream" class="tab-content">
+                    <div id="teacherPostBox" class="card-box" style="display: none;">
+                        <h4 style="margin-bottom: 10px; color: #1a202c;">Post Announcement / Material</h4>
+                        <textarea id="announcementInput" placeholder="Announce something or give instructions..." rows="3" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--fiba-light-gray); margin-bottom: 10px;" autocomplete="off"></textarea>
+                        
+                        <div style="margin-bottom: 10px;">
+                            <button type="button" onclick="document.getElementById('streamFileInput').click()" class="btn-secondary" style="font-size: 12px;"><i class="fa-solid fa-paperclip"></i> Attach File / Image</button>
+                            <input type="file" id="streamFileInput" accept="image/*,.pdf,.doc,.docx,.txt,.ppt,.pptx" style="display: none;" onchange="handleStreamFilePicked(event)">
+                            <span id="streamAttachedName" class="sub-text" style="margin-left: 10px; color: #047857; font-weight: 600;"></span>
+                        </div>
+
+                        <button onclick="postAnnouncement()" class="btn-primary">Post</button>
+                    </div>
+                    <div id="announcementList"></div>
+                </div>
+
+                <!-- TAB 2: Attendance -->
+                <div id="tabAttendance" class="tab-content" style="display: none;">
+                    <div class="card-box">
+                        <h3 style="color: #1a202c;">Daily Attendance Management</h3>
+                        <p class="sub-text" style="margin: 10px 0 15px 0;">Time in for attendance or verify status.</p>
+                        
+                        <div id="studentAttendanceAction" style="margin-bottom: 20px;"></div>
+
+                        <h4 style="margin-top: 25px; margin-bottom: 10px; color: #1a202c;">Attendance Logs</h4>
+                        <div id="attendanceTableBody"></div>
+                    </div>
+                </div>
+
+                <!-- TAB 3: Class Tasks -->
+                <div id="tabTodo" class="tab-content" style="display: none;">
+                    <div class="card-box">
+                        <h3 style="color: #1a202c;">Class Tasks & Activities</h3>
+                        <div id="teacherTaskBox" style="display: none; margin: 15px 0; background: #fff; padding: 15px; border-radius: 8px; border: 1px solid var(--fiba-light-gray);">
+                            <h4 style="margin-bottom: 10px;">Create New Task with File/Reference</h4>
+                            <div style="display: flex; flex-direction: column; gap: 10px;">
+                                <input type="text" id="todoTitleInput" placeholder="Task Title / Instruction" style="padding: 8px; border-radius: 6px; border: 1px solid var(--fiba-light-gray);" autocomplete="off">
+                                <div style="display: flex; gap: 10px; align-items: center;">
+                                    <label class="sub-text" style="font-weight: 600;">Due Date & Time:</label>
+                                    <input type="datetime-local" id="todoDueDateInput" style="padding: 6px; border-radius: 6px; border: 1px solid var(--fiba-light-gray);" autocomplete="off">
+                                </div>
+                                <div>
+                                    <button type="button" onclick="document.getElementById('taskFileInput').click()" class="btn-secondary" style="font-size: 12px;"><i class="fa-solid fa-paperclip"></i> Attach Reference File/Image</button>
+                                    <input type="file" id="taskFileInput" accept="image/*,.pdf,.doc,.docx,.txt,.ppt,.pptx" style="display: none;" onchange="handleTaskFilePicked(event)">
+                                    <span id="taskAttachedName" class="sub-text" style="margin-left: 10px; color: #047857; font-weight: 600;"></span>
+                                </div>
+                                <button onclick="addTask()" class="btn-primary" style="align-self: flex-start;">Post Task</button>
+                            </div>
+                        </div>
+                        <div id="todoList" style="margin-top: 15px;"></div>
+                    </div>
+                </div>
+
+                <!-- TAB 4: Classmates -->
+                <div id="tabPeople" class="tab-content" style="display: none;">
+                    <div class="card-box">
+                        <h3 style="margin-bottom: 15px; color: #1a202c;">Teacher</h3>
+                        <div id="peopleTeacherContainer"></div>
+
+                        <h3 style="margin-top: 25px; margin-bottom: 15px; color: #1a202c;">Classmates (Enrolled Students)</h3>
+                        <div id="peopleStudentsContainer"></div>
+                    </div>
+                </div>
+
+                <!-- TAB 5: Private Chat -->
+                <div id="tabPrivateChat" class="tab-content" style="display: none;">
+                    <div class="card-box">
+                        <div id="chatHeaderSelector" style="margin-bottom: 15px;"></div>
+                        <h3 style="color: #1a202c; margin-bottom: 10px;">Private Conversation</h3>
+                        <div class="chat-messages-container" id="chatContainer"></div>
+                        <div class="chat-input-box">
+                            <input type="text" id="chatInput" placeholder="Type a message..." onkeypress="handleChatKeyPress(event)" autocomplete="off">
+                            <button onclick="sendChatMessage()" class="btn-primary"><i class="fa-solid fa-paper-plane"></i></button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Modal Form for Create/Join Class -->
+    <div id="classModal" class="modal-overlay" style="display: none;">
+        <div class="modal-card">
+            <h3 id="modalTitle" style="margin-bottom: 15px; color: #1a202c;">Class Action</h3>
+            <div id="joinClassForm" style="display: none;">
+                <label class="sub-text">Enter Class Code:</label>
+                <input type="text" id="joinCodeInput" placeholder="e.g. A8X9B2" style="text-transform: uppercase;" autocomplete="off">
+            </div>
+            <div id="createClassForm" style="display: none;">
+                <label class="sub-text">Subject Name:</label>
+                <input type="text" id="createSubjectTitle" placeholder="e.g. Physical Education" autocomplete="off">
+                <label class="sub-text">Section / Year:</label>
+                <input type="text" id="createSubjectSection" placeholder="e.g. DCPE-1A" autocomplete="off">
+            </div>
+            <div style="text-align: right; margin-top: 15px;">
+                <button onclick="closeClassModal()" class="btn-secondary">Cancel</button>
+                <button onclick="submitClassModal()" class="btn-primary" id="modalSubmitBtn" style="margin-left: 5px;">Submit</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Submit Work Modal -->
+    <div id="submitWorkModal" class="modal-overlay" style="display: none;">
+        <div class="modal-card">
+            <h3 style="margin-bottom: 10px; color: #1a202c;">Submit Task / Add Work</h3>
+            <p class="sub-text" style="margin-bottom: 15px;">Select where to get your submission or provide your answer/link.</p>
+            
+            <label class="sub-text" style="font-weight: 600;">Answer / Link / Text:</label>
+            <input type="text" id="submitAnswerText" placeholder="Enter answer or link here..." autocomplete="off">
+
+            <div class="add-work-box">
+                <label class="sub-text" style="font-weight: 700; display: block; margin-bottom: 8px;">Create / Attach File:</label>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button type="button" onclick="document.getElementById('galleryFileInput').click()" class="btn-secondary" style="font-size: 12px; flex: 1;"><i class="fa-solid fa-image"></i> Gallery (Photos)</button>
+                    <button type="button" onclick="document.getElementById('docFileInput').click()" class="btn-secondary" style="font-size: 12px; flex: 1;"><i class="fa-solid fa-file-arrow-up"></i> Files / Docs</button>
+                </div>
+                <input type="file" id="galleryFileInput" accept="image/*" style="display: none;" onchange="handleFilePicked(event, 'Gallery')">
+                <input type="file" id="docFileInput" accept=".pdf,.doc,.docx,.txt,.ppt,.pptx" style="display: none;" onchange="handleFilePicked(event, 'Document')">
+                <p id="attachedFileNameDisplay" class="sub-text" style="margin-top: 8px; color: #047857; font-weight: 600;"></p>
+            </div>
+
+            <div style="text-align: right; margin-top: 20px;">
+                <button onclick="closeSubmitWorkModal()" class="btn-secondary">Cancel</button>
+                <button onclick="confirmSubmitTask()" class="btn-primary" style="margin-left: 5px;">Turn In</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyALCh1VJa8FVqyJ3-aCuZyH3cpnmVE8Jo",
+            authDomain: "classroom-dashboard-14a40.firebaseapp.com",
+            projectId: "classroom-dashboard-14a40",
+            storageBucket: "classroom-dashboard-14a40.appspot.com",
+            messagingSenderId: "548273784709",
+            appId: "1:548273784709:web:ef3f0d0cc3835db8c5e6ec",
+            measurementId: "G-SD1CZY8FC6",
+            databaseURL: "https://classroom-dashboard-14a40-default-rtdb.asia-southeast1.firebasedatabase.app"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        
+        let currentUser = null;
+        let userRole = null;
+        let activeSubjectCode = null;
+        let globalClassesCache = [];
+        let selectedChatStudent = null;
+        let activeTaskIdForSubmission = null;
+        let attachedFileDetails = null;
+        let streamAttachedFile = null;
+        let taskAttachedFile = null;
+        let heroSlideInterval = null;
+        let bannerSlideInterval = null;
+
+        function formatNameDisplay(fullName) {
+            if (!fullName) return '';
+            const parts = fullName.trim().split(' ');
+            if (parts.length === 1) return parts[0];
+            const surname = parts[parts.length - 1];
+            const firstNameInitial = parts[0].charAt(0).toUpperCase();
+            return `${surname} ${firstNameInitial}.`;
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            const rawUser = localStorage.getItem('loggedInUser');
+            if (!rawUser) {
+                window.location.href = "index.html";
+                return;
+            }
+
+            let userObj = {};
+            try { userObj = JSON.parse(rawUser); } catch(e) { userObj = { email: rawUser, displayName: rawUser }; }
+
+            currentUser = userObj.displayName || userObj.username || userObj.email || rawUser;
+            const rawRole = userObj.role || localStorage.getItem('userRole') || 'Student';
+            userRole = rawRole.trim();
+
+            const formattedName = formatNameDisplay(currentUser);
+            document.getElementById('currentUserDisplay').innerText = `${formattedName} (${userRole})`;
+
+            const actionBtn = document.getElementById('actionBtn');
+            const isTeacher = userRole.toLowerCase() === 'teacher';
+
+            if (actionBtn) {
+                actionBtn.innerHTML = isTeacher ? `<i class="fa-solid fa-plus"></i> New Class` : `<i class="fa-solid fa-right-to-bracket"></i> Join`;
+            }
+
+            if (isTeacher) {
+                document.getElementById('navEnrolledText').innerText = "CLASS";
+                document.getElementById('navEnrolledIcon').className = "fa-solid fa-chalkboard-user";
+                document.getElementById('classesSectionTitle').innerText = "Your Teaching Courses";
+                document.getElementById('secondViewTitle').innerText = "Courses";
+                document.getElementById('secondViewDesc').innerText = "Manage your active classes here.";
+            }
+
+            db.ref('classes').on('value', (snapshot) => {
+                const data = snapshot.val();
+                globalClassesCache = [];
+                if (data) {
+                    Object.keys(data).forEach(key => {
+                        globalClassesCache.push(data[key]);
+                    });
+                }
+                renderClasses();
+                renderEnrolledSubjects();
+                setupHeroSlideshow();
+                if (document.getElementById('globalTodoView').style.display === 'block') {
+                    loadGlobalTodoList();
+                }
+                if (activeSubjectCode) {
+                    const currentSubExists = globalClassesCache.some(c => c.code === activeSubjectCode);
+                    if (!currentSubExists) {
+                        alert("This class has been deleted by the teacher.");
+                        switchTopNav('home');
+                    } else {
+                        refreshActiveSubjectData();
+                    }
+                }
+            });
+        });
+
+        function getAllClasses() { return globalClassesCache; }
+        function generateClassCode() { return Math.random().toString(36).substring(2, 8).toUpperCase(); }
+
+        function getSubjectBannerImage(title) {
+            if (!title) return 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=1200&auto=format&fit=crop';
+            const lower = title.toLowerCase();
+            if (lower.includes('pe') || lower.includes('physical education') || lower.includes('sports')) {
+                return 'https://images.unsplash.com/photo-1517649763962-0c623066013b?q=80&w=1200&auto=format&fit=crop';
+            } else if (lower.includes('math') || lower.includes('calculus') || lower.includes('algebra')) {
+                return 'https://images.unsplash.com/photo-1509228468518-180dd4864904?q=80&w=1200&auto=format&fit=crop';
+            } else if (lower.includes('science') || lower.includes('physics') || lower.includes('chem')) {
+                return 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?q=80&w=1200&auto=format&fit=crop';
+            } else if (lower.includes('programming') || lower.includes('code') || lower.includes('computer') || lower.includes('it')) {
+                return 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?q=80&w=1200&auto=format&fit=crop';
+            }
+            return 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=1200&auto=format&fit=crop';
+        }
+
+        const defaultHeroSlides = [
+            { title: "Welcome to Classroom Dashboard", desc: "Organize your subjects, collaborate, and track tasks efficiently.", image: "https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=1200&auto=format&fit=crop" },
+            { title: "Collaborate in Real-Time", desc: "Chat privately, post announcements, and submit your activities on time.", image: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop" },
+            { title: "Track Your Academic Progress", desc: "Monitor your attendance, completed tasks, and upcoming deadlines in one place.", image: "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?q=80&w=1200&auto=format&fit=crop" }
+        ];
+
+        function setupHeroSlideshow() {
+            const container = document.getElementById('heroSlideshow');
+            const dotsContainer = document.getElementById('heroDots');
+            if (!container || !dotsContainer) return;
+
+            const existingSlides = container.querySelectorAll('.hero-slide');
+            existingSlides.forEach(s => s.remove());
+            dotsContainer.innerHTML = '';
+
+            defaultHeroSlides.forEach((slide, idx) => {
+                const slideDiv = document.createElement('div');
+                slideDiv.className = `hero-slide ${idx === 0 ? 'active' : ''}`;
+                slideDiv.style.backgroundImage = `linear-gradient(to top, rgba(0,0,0,0.8), rgba(0,0,0,0.2)), url('${slide.image}')`;
+                slideDiv.innerHTML = `
+                    <div class="hero-slide-content">
+                        <h2>${slide.title}</h2>
+                        <p>${slide.desc}</p>
+                    </div>
+                `;
+                container.insertBefore(slideDiv, dotsContainer);
+
+                const dot = document.createElement('div');
+                dot.className = `hero-dot ${idx === 0 ? 'active' : ''}`;
+                dot.onclick = () => currentHeroSlide(idx);
+                dotsContainer.appendChild(dot);
+            });
+
+            if (heroSlideInterval) clearInterval(heroSlideInterval);
+            heroSlideInterval = setInterval(nextHeroSlide, 5000);
+        }
+
+        let currentHeroIndex = 0;
+        function nextHeroSlide() {
+            showHeroSlide(currentHeroIndex + 1);
+        }
+
+        function currentHeroSlide(idx) {
+            showHeroSlide(idx);
+        }
+
+        function showHeroSlide(idx) {
+            const container = document.getElementById('heroSlideshow');
+            if (!container) return;
+            const slides = container.querySelectorAll('.hero-slide');
+            const dots = container.querySelectorAll('.hero-dot');
+            if (slides.length === 0) return;
+
+            currentHeroIndex = (idx + slides.length) % slides.length;
+
+            slides.forEach((slide, i) => {
+                slide.classList.toggle('active', i === currentHeroIndex);
+            });
+            dots.forEach((dot, i) => {
+                dot.classList.toggle('active', i === currentHeroIndex);
+            });
+        }
+
+        function setupSubjectBannerSlideshow(subjectTitle) {
+            const container = document.getElementById('subjectBannerContainer');
+            const dotsContainer = document.getElementById('subjectBannerDots');
+            if (!container || !dotsContainer) return;
+
+            const existingSlides = container.querySelectorAll('.subject-banner-slide');
+            existingSlides.forEach(s => s.remove());
+            dotsContainer.innerHTML = '';
+
+            const bgImg = getSubjectBannerImage(subjectTitle);
+            const bannerSlides = [
+                { title: subjectTitle, desc: "Welcome to your class stream, tasks, and attendance.", image: bgImg },
+                { title: "Collaborate & Learn", desc: "Communicate with your teacher and classmates seamlessly.", image: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop" }
+            ];
+
+            bannerSlides.forEach((slide, idx) => {
+                const slideDiv = document.createElement('div');
+                slideDiv.className = `subject-banner-slide ${idx === 0 ? 'active' : ''}`;
+                slideDiv.style.backgroundImage = `linear-gradient(to top, rgba(0,0,0,0.8), rgba(0,0,0,0.2)), url('${slide.image}')`;
+                slideDiv.innerHTML = `
+                    <div class="subject-banner-content">
+                        <h2 style="font-size: 26px; font-weight: 800; margin-bottom: 5px;">${slide.title}</h2>
+                        <p style="font-size: 14px; opacity: 0.9;">${slide.desc}</p>
+                    </div>
+                `;
+                container.insertBefore(slideDiv, dotsContainer);
+
+                const dot = document.createElement('div');
+                dot.className = `hero-dot ${idx === 0 ? 'active' : ''}`;
+                dot.onclick = () => currentBannerSlide(idx);
+                dotsContainer.appendChild(dot);
+            });
+
+            if (bannerSlideInterval) clearInterval(bannerSlideInterval);
+            bannerSlideInterval = setInterval(nextBannerSlide, 4000);
+        }
+
+        let currentBannerIndex = 0;
+        function nextBannerSlide() {
+            showBannerSlide(currentBannerIndex + 1);
+        }
+
+        function currentBannerSlide(idx) {
+            showBannerSlide(idx);
+        }
+
+        function showBannerSlide(idx) {
+            const container = document.getElementById('subjectBannerContainer');
+            if (!container) return;
+            const slides = container.querySelectorAll('.subject-banner-slide');
+            const dots = container.querySelectorAll('.subject-banner-dots .hero-dot');
+            if (slides.length === 0) return;
+
+            currentBannerIndex = (idx + slides.length) % slides.length;
+
+            slides.forEach((slide, i) => {
+                slide.classList.toggle('active', i === currentBannerIndex);
+            });
+            if (dots.length > 0) {
+                dots.forEach((dot, i) => {
+                    dot.classList.toggle('active', i === currentBannerIndex);
+                });
+            }
+        }
+
+        function switchTopNav(viewName) {
+            if (heroSlideInterval) clearInterval(heroSlideInterval);
+            if (bannerSlideInterval) clearInterval(bannerSlideInterval);
+
+            document.getElementById('mainDashboardView').style.display = 'none';
+            document.getElementById('enrolledSubjectView').style.display = 'none';
+            document.getElementById('globalTodoView').style.display = 'none';
+            document.getElementById('subjectDetailView').style.display = 'none';
+
+            document.getElementById('navHomeBtn').classList.remove('active');
+            document.getElementById('navEnrolledBtn').classList.remove('active');
+            document.getElementById('navTodoBtn').classList.remove('active');
+
+            activeSubjectCode = null;
+
+            if (viewName === 'home') {
+                document.getElementById('mainDashboardView').style.display = 'block';
+                document.getElementById('navHomeBtn').classList.add('active');
+                setupHeroSlideshow();
+            } else if (viewName === 'enrolled') {
+                document.getElementById('enrolledSubjectView').style.display = 'block';
+                document.getElementById('navEnrolledBtn').classList.add('active');
+                renderEnrolledSubjects();
+            } else if (viewName === 'todo') {
+                document.getElementById('globalTodoView').style.display = 'block';
+                document.getElementById('navTodoBtn').classList.add('active');
+                loadGlobalTodoList();
+            }
+        }
+
+        function renderClasses() {
+            const grid = document.getElementById('classesGrid');
+            if (!grid) return;
+            const classes = getAllClasses();
+            const isTeacher = userRole.toLowerCase() === 'teacher';
+
+            let filtered = classes;
+            if (isTeacher) {
+                filtered = classes.filter(c => c.teacher === currentUser);
+            } else {
+                filtered = classes.filter(c => c.students && c.students[currentUser.replace(/[.#$[\]]/g, "_")]);
+            }
+
+            if (filtered.length === 0) {
+                grid.innerHTML = `<p class="sub-text">No classes found. ${isTeacher ? 'Create a new class using the "+ New Class" button.' : 'Join a class using the "Join" button with a Class Code.'}</p>`;
+                return;
+            }
+
+            grid.innerHTML = '';
+            filtered.forEach(c => {
+                const card = document.createElement('div');
+                card.className = 'class-card';
+                card.onclick = () => openSubjectDetail(c.code);
+
+                const bgImage = getSubjectBannerImage(c.title);
+
+                card.innerHTML = `
+                    <div class="class-card-header" style="background-image: linear-gradient(to top, rgba(0,0,0,0.8), rgba(0,0,0,0.2)), url('${bgImage}')">
+                        <span>Code: ${c.code}</span>
+                        <div>
+                            <h4>${c.title}</h4>
+                            <p>Section: ${c.section}</p>
+                        </div>
+                    </div>
+                    <div class="class-card-body">
+                        <span class="sub-text">Teacher: ${c.teacher || 'N/A'}</span>
+                        <button class="btn-primary" onclick="event.stopPropagation(); openSubjectDetail('${c.code}')">View</button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function renderEnrolledSubjects() {
+            const grid = document.getElementById('enrolledSubjectsGrid');
+            if (!grid) return;
+            const classes = getAllClasses();
+            const isTeacher = userRole.toLowerCase() === 'teacher';
+
+            let filtered = classes;
+            if (isTeacher) {
+                filtered = classes.filter(c => c.teacher === currentUser);
+            } else {
+                filtered = classes.filter(c => c.students && c.students[currentUser.replace(/[.#$[\]]/g, "_")]);
+            }
+
+            if (filtered.length === 0) {
+                grid.innerHTML = `<p class="sub-text">You have no ${isTeacher ? 'created courses' : 'enrolled subjects'} yet.</p>`;
+                return;
+            }
+
+            grid.innerHTML = '';
+            filtered.forEach(c => {
+                const card = document.createElement('div');
+                card.className = 'class-card';
+                card.onclick = () => openSubjectDetail(c.code);
+                const bgImage = getSubjectBannerImage(c.title);
+
+                card.innerHTML = `
+                    <div class="class-card-header" style="background-image: linear-gradient(to top, rgba(0,0,0,0.8), rgba(0,0,0,0.2)), url('${bgImage}')">
+                        <span>Code: ${c.code}</span>
+                        <div>
+                            <h4>${c.title}</h4>
+                            <p>Section: ${c.section}</p>
+                        </div>
+                    </div>
+                    <div class="class-card-body">
+                        <span class="sub-text">Teacher: ${c.teacher || 'N/A'}</span>
+                        <button class="btn-primary" onclick="event.stopPropagation(); openSubjectDetail('${c.code}')">Open</button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function openSubjectDetail(code) {
+            if (heroSlideInterval) clearInterval(heroSlideInterval);
+            if (bannerSlideInterval) clearInterval(bannerSlideInterval);
+
+            activeSubjectCode = code;
+            document.getElementById('mainDashboardView').style.display = 'none';
+            document.getElementById('enrolledSubjectView').style.display = 'none';
+            document.getElementById('globalTodoView').style.display = 'none';
+            document.getElementById('subjectDetailView').style.display = 'block';
+
+            switchSubjectTab('stream');
+            refreshActiveSubjectData();
+        }
+
+        function refreshActiveSubjectData() {
+            if (!activeSubjectCode) return;
+            const classes = getAllClasses();
+            const subject = classes.find(c => c.code === activeSubjectCode);
+            if (!subject) return;
+
+            setupSubjectBannerSlideshow(subject.title);
+
+            const isTeacher = userRole.toLowerCase() === 'teacher';
+            const isOwner = isTeacher && subject.teacher === currentUser;
+
+            const actionControl = document.getElementById('subjectActionControl');
+            if (isOwner) {
+                actionControl.innerHTML = `<button class="btn-danger" onclick="deleteClass('${subject.code}')"><i class="fa-solid fa-trash"></i> Delete Class</button>`;
+                document.getElementById('teacherPostBox').style.display = 'block';
+                document.getElementById('teacherTaskBox').style.display = 'block';
+            } else {
+                // Para sa Student, magpapakita ang Unenroll Class button kasama ang pangalan ng Teacher
+                actionControl.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <span class="sub-text" style="font-weight: 600;">Teacher: ${subject.teacher}</span>
+                        <button class="btn-danger" onclick="unenrollClass('${subject.code}')"><i class="fa-solid fa-right-from-bracket"></i> Unenroll Class</button>
+                    </div>
+                `;
+                document.getElementById('teacherPostBox').style.display = 'none';
+                document.getElementById('teacherTaskBox').style.display = 'none';
+            }
+
+            loadStreamPosts(subject);
+            loadAttendanceData(subject);
+            loadClassTasks(subject);
+            loadClassmates(subject);
+            loadPrivateChatUsers(subject);
+        }
+
+        function switchSubjectTab(tabName) {
+            const tabs = ['stream', 'attendance', 'todo', 'people', 'privateChat'];
+            tabs.forEach(t => {
+                const el = document.getElementById(`tab${t.charAt(0).toUpperCase() + t.slice(1)}`);
+                if (el) el.style.display = (t === tabName) ? 'block' : 'none';
+            });
+
+            const tabBtns = document.querySelectorAll('.subject-tabs .tab-btn');
+            tabBtns.forEach(btn => btn.classList.remove('active'));
+            event && event.currentTarget && event.currentTarget.classList.add('active');
+
+            if (tabName === 'privateChat') {
+                loadPrivateChatMessages();
+            }
+        }
+
+        // Class CRUD
+        function openClassModal() {
+            const isTeacher = userRole.toLowerCase() === 'teacher';
+            document.getElementById('classModal').style.display = 'flex';
+            document.getElementById('modalTitle').innerText = isTeacher ? "Create New Class" : "Join Class";
+            document.getElementById('joinClassForm').style.display = isTeacher ? 'none' : 'block';
+            document.getElementById('createClassForm').style.display = isTeacher ? 'block' : 'none';
+        }
+
+        function closeClassModal() {
+            document.getElementById('classModal').style.display = 'none';
+            document.getElementById('joinCodeInput').value = '';
+            document.getElementById('createSubjectTitle').value = '';
+            document.getElementById('createSubjectSection').value = '';
+        }
+
+        function submitClassModal() {
+            const isTeacher = userRole.toLowerCase() === 'teacher';
+            if (isTeacher) {
+                const title = document.getElementById('createSubjectTitle').value.trim();
+                const section = document.getElementById('createSubjectSection').value.trim();
+                if (!title || !section) {
+                    alert("Please fill out all fields.");
+                    return;
+                }
+                const code = generateClassCode();
+                const newClass = {
+                    code: code,
+                    title: title,
+                    section: section,
+                    teacher: currentUser,
+                    students: {},
+                    announcements: {},
+                    attendance: {},
+                    tasks: {},
+                    chat: {}
+                };
+                db.ref('classes/' + code).set(newClass).then(() => {
+                    closeClassModal();
+                    alert(`Class successfully created! Class Code: ${code}`);
+                });
+            } else {
+                const code = document.getElementById('joinCodeInput').value.trim().toUpperCase();
+                if (!code) {
+                    alert("Please enter the Class Code.");
+                    return;
+                }
+                db.ref('classes/' + code).once('value', (snapshot) => {
+                    const cls = snapshot.val();
+                    if (!cls) {
+                        alert("No class found with this code.");
+                        return;
+                    }
+                    const cleanUserKey = currentUser.replace(/[.#$[\]]/g, "_");
+                    db.ref(`classes/${code}/students/${cleanUserKey}`).set({
+                        name: currentUser,
+                        joinedAt: new Date().toISOString()
+                    }).then(() => {
+                        closeClassModal();
+                        alert("Successfully joined the class!");
+                        openSubjectDetail(code);
+                    });
+                });
+            }
+        }
+
+        function deleteClass(code) {
+            if (confirm("Are you sure you want to delete this class?")) {
+                db.ref('classes/' + code).remove().then(() => {
+                    alert("Class has been deleted.");
+                    switchTopNav('home');
+                });
+            }
+        }
+
+        function unenrollClass(code) {
+            if (confirm("Are you sure you want to unenroll from this class?")) {
+                const cleanUserKey = currentUser.replace(/[.#$[\]]/g, "_");
+                db.ref(`classes/${code}/students/${cleanUserKey}`).remove().then(() => {
+                    alert("You have successfully unenrolled from the class.");
+                    switchTopNav('home');
+                });
+            }
+        }
+
+        // Stream / Announcements
+        function handleStreamFilePicked(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                streamAttachedFile = { name: file.name, data: e.target.result, type: file.type };
+                document.getElementById('streamAttachedName').innerText = `Attached: ${file.name}`;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function postAnnouncement() {
+            const text = document.getElementById('announcementInput').value.trim();
+            if (!text && !streamAttachedFile) {
+                alert("Please enter a message or attach a file.");
+                return;
+            }
+            const postId = db.ref().child('classes').push().key;
+            const postData = {
+                id: postId,
+                author: currentUser,
+                role: userRole,
+                text: text,
+                file: streamAttachedFile || null,
+                timestamp: new Date().toISOString()
+            };
+
+            db.ref(`classes/${activeSubjectCode}/announcements/${postId}`).set(postData).then(() => {
+                document.getElementById('announcementInput').value = '';
+                streamAttachedFile = null;
+                document.getElementById('streamAttachedName').innerText = '';
+                document.getElementById('streamFileInput').value = '';
+            });
+        }
+
+        function loadStreamPosts(subject) {
+            const container = document.getElementById('announcementList');
+            if (!container) return;
+            const announcements = subject.announcements;
+            if (!announcements) {
+                container.innerHTML = `<p class="sub-text">No announcements yet.</p>`;
+                return;
+            }
+
+            container.innerHTML = '';
+            const keys = Object.keys(announcements).sort((a,b) => new Date(announcements[b].timestamp) - new Date(announcements[a].timestamp));
+            keys.forEach(k => {
+                const post = announcements[k];
+                const box = document.createElement('div');
+                box.className = 'card-box';
+                
+                let fileHtml = '';
+                if (post.file) {
+                    if (post.file.type && post.file.type.startsWith('image/')) {
+                        fileHtml = `<div style="margin-top: 10px;"><img src="${post.file.data}" style="max-width: 100%; max-height: 250px; border-radius: 8px;"></div>`;
+                    } else {
+                        fileHtml = `<div style="margin-top: 10px;"><a href="${post.file.data}" download="${post.file.name}" class="btn-secondary" style="font-size: 12px; text-decoration: none; display: inline-block;"><i class="fa-solid fa-file-arrow-down"></i> Download ${post.file.name}</a></div>`;
+                    }
+                }
+
+                box.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <span style="font-weight: 700; color: #1e1b4b;">${post.author} <span style="font-size: 11px; color: #4a5568; font-weight: 400;">(${post.role})</span></span>
+                        <span class="sub-text">${new Date(post.timestamp).toLocaleString()}</span>
+                    </div>
+                    <p style="font-size: 14px; color: #2d3748; white-space: pre-wrap;">${post.text || ''}</p>
+                    ${fileHtml}
+                `;
+                container.appendChild(box);
+            });
+        }
+
+        // Attendance
+        function loadAttendanceData(subject) {
+            const isTeacher = userRole.toLowerCase() === 'teacher';
+            const actionContainer = document.getElementById('studentAttendanceAction');
+            const tableContainer = document.getElementById('attendanceTableBody');
+
+            if (!isTeacher) {
+                const cleanUserKey = currentUser.replace(/[.#$[\]]/g, "_");
+                const todayStr = new Date().toISOString().split('T')[0];
+                const myAttendance = subject.attendance && subject.attendance[todayStr] && subject.attendance[todayStr][cleanUserKey];
+
+                if (myAttendance) {
+                    actionContainer.innerHTML = `<span style="font-weight: 600; color: #047857;"><i class="fa-solid fa-check-circle"></i> You have already timed in today (${myAttendance.status})</span>`;
+                } else {
+                    actionContainer.innerHTML = `<button onclick="studentTimeIn()" class="btn-primary"><i class="fa-solid fa-clock"></i> Time In Today</button>`;
+                }
+            } else {
+                actionContainer.innerHTML = `<button onclick="teacherCreateAttendanceSession()" class="btn-primary"><i class="fa-solid fa-calendar-plus"></i> Open Attendance Session Today</button>`;
+            }
+
+            if (!subject.attendance) {
+                tableContainer.innerHTML = `<p class="sub-text">No attendance logs yet.</p>`;
+                return;
+            }
+
+            let html = `<table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                <tr style="border-bottom: 2px solid #cbd5e1; text-align: left;">
+                    <th style="padding: 8px;">Date</th>
+                    <th style="padding: 8px;">Student Name</th>
+                    <th style="padding: 8px;">Status</th>
+                    ${isTeacher ? '<th style="padding: 8px;">Action</th>' : ''}
+                </tr>`;
+
+            Object.keys(subject.attendance).sort().reverse().forEach(dateKey => {
+                const dateRecords = subject.attendance[dateKey];
+                Object.keys(dateRecords).forEach(studentKey => {
+                    const rec = dateRecords[studentKey];
+                    html += `<tr style="border-bottom: 1px solid #e2e8f0;">
+                        <td style="padding: 8px;">${dateKey}</td>
+                        <td style="padding: 8px; font-weight: 600;">${rec.name}</td>
+                        <td style="padding: 8px; color: ${rec.status === 'Present' ? '#047857' : '#b91c1c'}; font-weight: 600;">${rec.status}</td>
+                        ${isTeacher ? `<td style="padding: 8px;"><button class="btn-secondary" style="font-size: 11px; padding: 4px 8px;" onclick="toggleAttendanceStatus('${dateKey}', '${studentKey}')">Toggle Status</button></td>` : ''}
+                    </tr>`;
+                });
+            });
+            html += `</table>`;
+            tableContainer.innerHTML = html;
+        }
+
+        function studentTimeIn() {
+            const todayStr = new Date().toISOString().split('T')[0];
+            const cleanUserKey = currentUser.replace(/[.#$[\]]/g, "_");
+            const record = {
+                name: currentUser,
+                status: 'Present',
+                timestamp: new Date().toISOString()
+            };
+            db.ref(`classes/${activeSubjectCode}/attendance/${todayStr}/${cleanUserKey}`).set(record).then(() => {
+                alert("Successfully timed in!");
+                refreshActiveSubjectData();
+            });
+        }
+
+        function teacherCreateAttendanceSession() {
+            const todayStr = new Date().toISOString().split('T')[0];
+            db.ref(`classes/${activeSubjectCode}/students`).once('value', (snapshot) => {
+                const students = snapshot.val() || {};
+                const updates = {};
+                Object.keys(students).forEach(sKey => {
+                    updates[`${sKey}`] = {
+                        name: students[sKey].name,
+                        status: 'Absent',
+                        timestamp: new Date().toISOString()
+                    };
+                });
+                db.ref(`classes/${activeSubjectCode}/attendance/${todayStr}`).update(updates).then(() => {
+                    alert("Attendance session opened for all students today.");
+                    refreshActiveSubjectData();
+                });
+            });
+        }
+
+        function toggleAttendanceStatus(dateKey, studentKey) {
+            db.ref(`classes/${activeSubjectCode}/attendance/${dateKey}/${studentKey}/status`).once('value', (snap) => {
+                const current = snap.val();
+                const nextStatus = current === 'Present' ? 'Absent' : 'Present';
+                db.ref(`classes/${activeSubjectCode}/attendance/${dateKey}/${studentKey}/status`).set(nextStatus).then(() => {
+                    refreshActiveSubjectData();
+                });
+            });
+        }
+
+        // Class Tasks / Assignments
+        function handleTaskFilePicked(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                taskAttachedFile = { name: file.name, data: e.target.result, type: file.type };
+                document.getElementById('taskAttachedName').innerText = `Attached: ${file.name}`;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function addTask() {
+            const title = document.getElementById('todoTitleInput').value.trim();
+            const dueDate = document.getElementById('todoDueDateInput').value;
+            if (!title) {
+                alert("Please enter the task title or instruction.");
+                return;
+            }
+            const taskId = db.ref().child('classes').push().key;
+            const taskData = {
+                id: taskId,
+                title: title,
+                dueDate: dueDate || 'No due date',
+                file: taskAttachedFile || null,
+                createdAt: new Date().toISOString(),
+                submissions: {}
+            };
+
+            db.ref(`classes/${activeSubjectCode}/tasks/${taskId}`).set(taskData).then(() => {
+                document.getElementById('todoTitleInput').value = '';
+                document.getElementById('todoDueDateInput').value = '';
+                taskAttachedFile = null;
+                document.getElementById('taskAttachedName').innerText = '';
+                document.getElementById('taskFileInput').value = '';
+                alert("Task successfully posted.");
+            });
+        }
+
+        function loadClassTasks(subject) {
+            const container = document.getElementById('todoList');
+            if (!container) return;
+            const tasks = subject.tasks;
+            const isTeacher = userRole.toLowerCase() === 'teacher';
+
+            if (!tasks) {
+                container.innerHTML = `<p class="sub-text">No tasks or activities yet.</p>`;
+                return;
+            }
+
+            container.innerHTML = '';
+            Object.keys(tasks).sort((a,b) => new Date(tasks[b].createdAt) - new Date(tasks[a].createdAt)).forEach(taskId => {
+                const task = tasks[taskId];
+                const box = document.createElement('div');
+                box.className = 'card-box';
+
+                let fileHtml = '';
+                if (task.file) {
+                    if (task.file.type && task.file.type.startsWith('image/')) {
+                        fileHtml = `<div style="margin-top: 10px;"><img src="${task.file.data}" style="max-width: 100%; max-height: 200px; border-radius: 8px;"></div>`;
+                    } else {
+                        fileHtml = `<div style="margin-top: 10px;"><a href="${task.file.data}" download="${task.file.name}" class="btn-secondary" style="font-size: 12px; text-decoration: none; display: inline-block;"><i class="fa-solid fa-file-arrow-down"></i> Download Reference: ${task.file.name}</a></div>`;
+                    }
+                }
+
+                const cleanUserKey = currentUser.replace(/[.#$[\]]/g, "_");
+                const mySubmission = task.submissions && task.submissions[cleanUserKey];
+
+                let actionHtml = '';
+                if (isTeacher) {
+                    let subCount = task.submissions ? Object.keys(task.submissions).length : 0;
+                    actionHtml = `<div style="margin-top: 15px; border-top: 1px solid #cbd5e1; padding-top: 10px;">
+                        <h4 style="font-size: 14px; margin-bottom: 8px;">Submissions (${subCount}):</h4>`;
+                    if (subCount === 0) {
+                        actionHtml += `<p class="sub-text">No submissions yet.</p>`;
+                    } else {
+                        Object.keys(task.submissions).forEach(sKey => {
+                            const sub = task.submissions[sKey];
+                            let subFileHtml = '';
+                            if (sub.file) {
+                                subFileHtml = `<br><a href="${sub.file.data}" download="${sub.file.name}" style="color: #1e1b4b; font-weight: 600; font-size: 12px;"><i class="fa-solid fa-file-arrow-down"></i> ${sub.file.name}</a>`;
+                            }
+                            actionHtml += `<div style="background: white; padding: 8px; border-radius: 6px; margin-bottom: 6px; font-size: 13px;">
+                                <strong>${sub.studentName}</strong>: ${sub.answerText || 'No text'} ${subFileHtml}
+                                <span class="sub-text" style="display: block; font-size: 11px;">Submitted: ${new Date(sub.submittedAt).toLocaleString()}</span>
+                            </div>`;
+                        });
+                    }
+                    actionHtml += `</div>`;
+                } else {
+                    if (mySubmission) {
+                        actionHtml = `<div style="margin-top: 12px; background: #e6fffa; padding: 10px; border-radius: 6px; border: 1px solid #b2f5ea;">
+                            <span style="color: #047857; font-weight: 600; font-size: 13px;"><i class="fa-solid fa-check-circle"></i> Turned In</span>
+                            <p class="sub-text" style="margin-top: 4px;">Answer: ${mySubmission.answerText || 'None'}</p>
+                            ${mySubmission.file ? `<a href="${mySubmission.file.data}" download="${mySubmission.file.name}" class="sub-text" style="color: #047857; font-weight: bold;"><i class="fa-solid fa-file"></i> ${mySubmission.file.name}</a>` : ''}
+                        </div>`;
+                    } else {
+                        actionHtml = `<div style="margin-top: 12px;">
+                            <button onclick="openSubmitWorkModal('${taskId}')" class="btn-primary" style="font-size: 13px; padding: 6px 14px;">+ Submit / Add Work</button>
+                        </div>`;
+                    }
+                }
+
+                box.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <h4 style="color: #1a202c; font-size: 16px;">${task.title}</h4>
+                        <span class="sub-text" style="font-weight: 600; color: #b91c1c;">Due: ${task.dueDate}</span>
+                    </div>
+                    ${fileHtml}
+                    ${actionHtml}
+                `;
+                container.appendChild(box);
+            });
+        }
+
+        function loadGlobalTodoList() {
+            const container = document.getElementById('globalTodoList');
+            if (!container) return;
+            const classes = getAllClasses();
+            const isTeacher = userRole.toLowerCase() === 'teacher';
+
+            let myClasses = classes;
+            if (isTeacher) {
+                myClasses = classes.filter(c => c.teacher === currentUser);
+            } else {
+                myClasses = classes.filter(c => c.students && c.students[currentUser.replace(/[.#$[\]]/g, "_")]);
+            }
+
+            let allTasksList = [];
+            myClasses.forEach(c => {
+                if (c.tasks) {
+                    Object.keys(c.tasks).forEach(tId => {
+                        allTasksList.push({ ...c.tasks[tId], subjectTitle: c.title, subjectCode: c.code });
+                    });
+                }
+            });
+
+            if (allTasksList.length === 0) {
+                container.innerHTML = `<p class="sub-text">No tasks across your classes.</p>`;
+                return;
+            }
+
+            container.innerHTML = '';
+            allTasksList.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt)).forEach(task => {
+                const box = document.createElement('div');
+                box.className = 'card-box';
+                box.style.cursor = 'pointer';
+                box.onclick = () => openSubjectDetail(task.subjectCode);
+
+                box.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <span style="font-size: 12px; font-weight: 700; background: #e0e7ff; color: #3730a3; padding: 2px 8px; border-radius: 4px;">${task.subjectTitle}</span>
+                        <span class="sub-text" style="font-weight: 600; color: #b91c1c;">Due: ${task.dueDate}</span>
+                    </div>
+                    <h4 style="color: #1a202c; font-size: 16px;">${task.title}</h4>
+                `;
+                container.appendChild(box);
+            });
+        }
+
+        // Submit Work Modal functions
+        function openSubmitWorkModal(taskId) {
+            activeTaskIdForSubmission = taskId;
+            attachedFileDetails = null;
+            document.getElementById('submitAnswerText').value = '';
+            document.getElementById('attachedFileNameDisplay').innerText = '';
+            document.getElementById('submitWorkModal').style.display = 'flex';
+        }
+
+        function closeSubmitWorkModal() {
+            document.getElementById('submitWorkModal').style.display = 'none';
+            activeTaskIdForSubmission = null;
+            attachedFileDetails = null;
+        }
+
+        function handleFilePicked(event, typeLabel) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                attachedFileDetails = { name: file.name, data: e.target.result, type: file.type };
+                document.getElementById('attachedFileNameDisplay').innerText = `Attached (${typeLabel}): ${file.name}`;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function confirmSubmitTask() {
+            if (!activeTaskIdForSubmission) return;
+            const answerText = document.getElementById('submitAnswerText').value.trim();
+            if (!answerText && !attachedFileDetails) {
+                alert("Please provide an answer or attach a file.");
+                return;
+            }
+
+            const cleanUserKey = currentUser.replace(/[.#$[\]]/g, "_");
+            const submissionData = {
+                studentName: currentUser,
+                answerText: answerText,
+                file: attachedFileDetails || null,
+                submittedAt: new Date().toISOString()
+            };
+
+            db.ref(`classes/${activeSubjectCode}/tasks/${activeTaskIdForSubmission}/submissions/${cleanUserKey}`).set(submissionData).then(() => {
+                closeSubmitWorkModal();
+                alert("Task successfully submitted!");
+                refreshActiveSubjectData();
+            });
+        }
+
+        // Classmates / People
+        function loadClassmates(subject) {
+            const teacherContainer = document.getElementById('peopleTeacherContainer');
+            const studentsContainer = document.getElementById('peopleStudentsContainer');
+            if (!teacherContainer || !studentsContainer) return;
+
+            teacherContainer.innerHTML = `<div class="people-list-item"><span><i class="fa-solid fa-chalkboard-user" style="margin-right: 8px; color: #1e1b4b;"></i> ${subject.teacher || 'N/A'} (Teacher)</span></div>`;
+
+            const students = subject.students;
+            if (!students || Object.keys(students).length === 0) {
+                studentsContainer.innerHTML = `<p class="sub-text">No students enrolled yet.</p>`;
+                return;
+            }
+
+            let html = '';
+            Object.keys(students).forEach(sKey => {
+                const st = students[sKey];
+                html += `<div class="people-list-item">
+                    <span><i class="fa-solid fa-user-graduate" style="margin-right: 8px; color: #4a5568;"></i> ${st.name}</span>
+                    <button class="btn-secondary" style="font-size: 11px; padding: 4px 10px;" onclick="startChatWith('${st.name}')"><i class="fa-solid fa-comment"></i> Chat</button>
+                </div>`;
+            });
+            studentsContainer.innerHTML = html;
+        }
+
+        function startChatWith(studentName) {
+            selectedChatStudent = studentName;
+            switchSubjectTab('privateChat');
+        }
+
+        // Private Chat
+        function loadPrivateChatUsers(subject) {
+            const selector = document.getElementById('chatHeaderSelector');
+            if (!selector) return;
+            const isTeacher = userRole.toLowerCase() === 'teacher';
+
+            if (isTeacher) {
+                const students = subject.students || {};
+                let html = `<label class="sub-text" style="font-weight: 600; margin-right: 8px;">Select Student to Chat:</label>
+                <select id="chatStudentSelect" onchange="onChatStudentChanged(this.value)" style="padding: 6px; border-radius: 6px; border: 1px solid var(--fiba-light-gray);">
+                    <option value="">-- Select Student --</option>`;
+                
+                Object.keys(students).forEach(sKey => {
+                    const st = students[sKey];
+                    const selected = selectedChatStudent === st.name ? 'selected' : '';
+                    html += `<option value="${st.name}" ${selected}>${st.name}</option>`;
+                });
+                html += `</select>`;
+                selector.innerHTML = html;
+            } else {
+                selectedChatStudent = subject.teacher;
+                selector.innerHTML = `<span style="font-weight: 600; color: #1e1b4b;">Chatting with Teacher: ${subject.teacher}</span>`;
+            }
+        }
+
+        function onChatStudentChanged(studentName) {
+            selectedChatStudent = studentName;
+            loadPrivateChatMessages();
+        }
+
+        function sendChatMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            if (!message) return;
+
+            if (!selectedChatStudent) {
+                alert("Please select a recipient first.");
+                return;
+            }
+
+            const chatKey = getChatRoomKey(currentUser, selectedChatStudent);
+            const msgId = db.ref().child('classes').push().key;
+            const msgData = {
+                id: msgId,
+                sender: currentUser,
+                receiver: selectedChatStudent,
+                message: message,
+                timestamp: new Date().toISOString()
+            };
+
+            db.ref(`classes/${activeSubjectCode}/chat/${chatKey}/${msgId}`).set(msgData).then(() => {
+                input.value = '';
+            });
+        }
+
+        function handleChatKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendChatMessage();
+            }
+        }
+
+        function getChatRoomKey(userA, userB) {
+            const cleanA = userA.replace(/[.#$[\]]/g, "_");
+            const cleanB = userB.replace(/[.#$[\]]/g, "_");
+            return [cleanA, cleanB].sort().join('_');
+        }
+
+        function loadPrivateChatMessages() {
+            const container = document.getElementById('chatContainer');
+            if (!container) return;
+
+            if (!selectedChatStudent) {
+                container.innerHTML = `<p class="sub-text">Select a chat partner to start the conversation.</p>`;
+                return;
+            }
+
+            const chatKey = getChatRoomKey(currentUser, selectedChatStudent);
+            db.ref(`classes/${activeSubjectCode}/chat/${chatKey}`).on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (!data) {
+                    container.innerHTML = `<p class="sub-text">No messages yet with ${selectedChatStudent}.</p>`;
+                    return;
+                }
+
+                container.innerHTML = '';
+                Object.keys(data).sort((a,b) => new Date(data[a].timestamp) - new Date(data[b].timestamp)).forEach(mKey => {
+                    const msg = data[mKey];
+                    const isMe = msg.sender === currentUser;
+                    const bubble = document.createElement('div');
+                    bubble.style.marginBottom = '10px';
+                    bubble.style.textAlign = isMe ? 'right' : 'left';
+
+                    bubble.innerHTML = `
+                        <div style="display: inline-block; max-width: 75%; background: ${isMe ? '#1e1b4b' : '#f1f5f9'}; color: ${isMe ? '#fff' : '#1a202c'}; padding: 10px 14px; border-radius: 10px; text-align: left; font-size: 14px;">
+                            <span style="font-size: 11px; opacity: 0.8; display: block; margin-bottom: 2px; font-weight: bold;">${msg.sender}</span>
+                            ${msg.message}
+                        </div>
+                    `;
+                    container.appendChild(bubble);
+                });
+                container.scrollTop = container.scrollHeight;
+            });
+        }
+
+        function handleLogout() {
+            localStorage.removeItem('loggedInUser');
+            localStorage.removeItem('userRole');
+            window.location.href = "index.html";
+        }
+    </script>
+</body>
+</html>

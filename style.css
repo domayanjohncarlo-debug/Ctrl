@@ -1,0 +1,279 @@
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    /* Yellow glow sa logo (25% 50%) at sa login box (75% 50%) */
+    background: 
+        radial-gradient(circle at 25% 50%, rgba(255, 204, 0, 0.18) 0%, transparent 45%),
+        radial-gradient(circle at 75% 50%, rgba(255, 204, 0, 0.18) 0%, transparent 45%),
+        #0a192f;
+}
+
+.main-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 50px;
+}
+
+.brand-section {
+    text-align: center;
+    color: white;
+    max-width: 320px; /* Nilakihan para magkasya ang mas malaking text at logo */
+}
+
+.logo-img {
+    width: 200px; /* Nilakihan ang logo */
+    height: 200px;
+    object-fit: cover;
+    border-radius: 50%; /* Malinis na bilog nang walang puting kanto */
+    margin-bottom: 20px;
+    box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.4); /* Dagdag shadow para mas umangat */
+}
+
+.brand-section h1 {
+    font-size: 24px; /* Nilakihan ang pangalan ng school */
+    font-weight: 700;
+    margin: 0;
+    line-height: 1.3;
+    color: #ffffff;
+    text-shadow: 0px 2px 5px rgba(0, 0, 0, 0.5);
+}
+
+.login-container {
+    background: #ffffff;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.3);
+    width: 320px;
+}
+
+/* Toggle Tabs */
+.form-toggle {
+    display: flex;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #eee;
+}
+
+.toggle-btn {
+    flex: 1;
+    padding: 10px;
+    background: none;
+    border: none;
+    font-size: 16px;
+    font-weight: 600;
+    color: #888;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.toggle-btn.active {
+    color: #0d1b2a;
+    border-bottom: 3px solid #ffcc00;
+}
+
+.login-container h2 {
+    color: #333;
+    margin-bottom: 15px;
+    font-size: 20px;
+    text-align: center;
+}
+
+/* Input Groups & Form Groups (Para sa Login at Register) */
+.input-group,
+.form-group {
+    margin-bottom: 12px;
+    text-align: left;
+}
+
+.input-group label,
+.form-group label {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 13px;
+    color: #555;
+    font-weight: 600;
+}
+
+.input-group input, 
+.input-group select,
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 9px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-size: 14px;
+}
+
+/* Buttons (Para sa Login at Register) */
+.btn,
+.login-btn {
+    width: 100%;
+    padding: 10px;
+    background-color: #0d1b2a;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    margin-top: 10px;
+    font-weight: 600;
+    transition: background-color 0.2s ease;
+}
+
+.btn:hover,
+.login-btn:hover {
+    background-color: #1b263b;
+}
+
+.input-group input.input-error,
+.form-group input.input-error {
+    border-color: #e63946 !important;
+    background-color: #fff5f5;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(230, 57, 70, 0.15);
+}
+
+/* Modern Clean Error Message Bar */
+.error-msg {
+    color: #d90429;
+    background-color: #ffe5ec;
+    border: 1px solid #ffb3c1;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 15px;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Dashboard Global Styles */
+.dashboard-body {
+    background-color: #f4f6f9;
+    display: block;
+    min-height: 100vh;
+}
+
+/* Header / Navigation */
+.navbar {
+    background-color: #0a192f;
+    color: white;
+    padding: 15px 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+}
+
+.nav-brand h2 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+    color: #ffcc00;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    font-size: 14px;
+}
+
+.logout-btn {
+    background-color: #e63946;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.logout-btn:hover {
+    background-color: #d90429;
+}
+
+/* Cards & Layout */
+.dashboard-container {
+    max-width: 1000px;
+    margin: 30px auto;
+    padding: 0 20px;
+}
+
+.card {
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    margin-bottom: 25px;
+}
+
+.card h3 {
+    margin-top: 0;
+    color: #0a192f;
+}
+
+.card h4 {
+    margin-top: 25px;
+    margin-bottom: 15px;
+    color: #333;
+}
+
+/* Action Buttons */
+.timein-btn {
+    background-color: #2ec4b6;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.timein-btn:hover {
+    background-color: #20a497;
+}
+
+/* Tables */
+.table-responsive {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+th, td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+    font-size: 14px;
+}
+
+th {
+    background-color: #f8f9fa;
+    color: #0a192f;
+    font-weight: 700;
+}
+
+.status-badge {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 12px;
+}
